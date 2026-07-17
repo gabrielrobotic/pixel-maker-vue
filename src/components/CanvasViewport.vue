@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue";
 
 import initWebGL2 from "@/webgl/init";
-import { renderRect } from "@/webgl/drawExamples/rect";
+import { renderGrid } from "@/webgl/drawExamples/grid";
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const gl = ref<WebGL2RenderingContext | null>(null);
@@ -13,7 +13,7 @@ onMounted(() => {
   gl.value = initWebGL2(canvasRef.value);
   if (!gl.value) return;
 
-  renderRect(gl.value);
+  renderGrid(gl.value);
 });
 </script>
 

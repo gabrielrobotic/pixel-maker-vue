@@ -3,7 +3,8 @@ import fragmentShaderSource from "@/webgl/shaders/default.frag?raw";
 
 import createShader from "@/webgl/shader";
 import createProgram from "@/webgl/program";
-import { createIndexBuffer, createVertexBuffer } from "@/webgl/buffer";
+import { createVertexBuffer } from "@/webgl/buffer";
+import createGridVertices from "@/webgl/grid";
 
 const camera = {
   x: 0,
@@ -11,30 +12,13 @@ const camera = {
   zoom: 1,
 };
 
-const vertices = new Float32Array([
-  // A
-  -0.5, 0.5,
-  // B
-  0.5, 0.5,
-  // C
-  0.5, -0.5,
-  // D
-  -0.5, -0.5,
-]);
+export function renderGrid(gl: WebGL2RenderingContext) {
+  const vertices = createGridVertices(1, 0.1);
 
-const indices = new Uint16Array([
-  // triangle 1
-  0, 1, 2,
-  // triangle 2
-  0, 2, 3,
-]);
-
-export function renderRect(gl: WebGL2RenderingContext): void {
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)!;
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)!;
 
   createVertexBuffer(gl, vertices);
-  createIndexBuffer(gl, indices);
 
   const program = createProgram(gl, vertexShader, fragmentShader)!;
   gl.useProgram(program);
@@ -49,5 +33,5 @@ export function renderRect(gl: WebGL2RenderingContext): void {
   gl.enableVertexAttribArray(positionLocation);
   gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 }
