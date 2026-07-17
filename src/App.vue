@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppHeader from "./components/AppHeader.vue";
 import AppSidebar from "./components/AppSidebar.vue";
+import CanvasViewport from "./components/CanvasViewport.vue";
 </script>
 
 <template>
@@ -9,7 +10,9 @@ import AppSidebar from "./components/AppSidebar.vue";
 
     <main class="flex flex-1 overflow-hidden">
       <AppSidebar />
-      <section class="flex-1 bg-neutral-900"></section>
+      <section class="flex-1">
+        <CanvasViewport />
+      </section>
     </main>
   </div>
 </template>
