@@ -12,6 +12,7 @@ export class WebGLRenderer {
   readonly #vao: WebGLVertexArrayObject;
 
   readonly #colorLocation: WebGLUniformLocation | null;
+  readonly #transformLocation: WebGLUniformLocation | null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.#canvas = canvas;
@@ -31,41 +32,43 @@ export class WebGLRenderer {
 
     this.#gl.bufferData(
       this.#gl.ARRAY_BUFFER,
-      new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]),
+      new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]),
       this.#gl.STATIC_DRAW,
     );
 
-    const position = this.#program.getAttribLocation("position");
+    const position = this.#program.getAttribLocation("a_position");
 
     this.#gl.enableVertexAttribArray(position);
     this.#gl.vertexAttribPointer(position, 2, this.#gl.FLOAT, false, 0, 0);
     this.#gl.bindVertexArray(null);
 
-    this.#colorLocation = this.#program.getUniformLocation("color");
+    this.#transformLocation = this.#program.getUniformLocation("u_transform");
+    this.#colorLocation = this.#program.getUniformLocation("u_color");
   }
 
-  resize(): void {
+  resize(width: number, height: number): void {
     const dpr = window.devicePixelRatio;
-    const width = Math.floor(this.#canvas.clientWidth * dpr);
-    const height = Math.floor(this.#canvas.clientHeight * dpr);
+    const pixelWidth = Math.floor(width * dpr);
+    const pixelHeight = Math.floor(height * dpr);
 
-    if (this.#canvas.width !== width || this.#canvas.height !== height) {
-      this.#canvas.width = width;
-      this.#canvas.height = height;
+    if (this.#canvas.width !== pixelWidth || this.#canvas.height !== pixelHeight) {
+      this.#canvas.width = pixelWidth;
+      this.#canvas.height = pixelHeight;
     }
 
-    this.#gl.viewport(0, 0, width, height);
-    this.render();
+    this.#gl.viewport(0, 0, pixelWidth, pixelHeight);
   }
 
-  render(): void {
+  render(transform: Float32Array): void {
     this.#gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 
     this.#program.use();
 
+    this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
+
     this.#gl.bindVertexArray(this.#vao);
-    this.#gl.drawArrays(this.#gl.TRIANGLES, 0, 3);
+    this.#gl.drawArrays(this.#gl.TRIANGLE_STRIP, 0, 4);
     this.#gl.bindVertexArray(null);
   }
 
