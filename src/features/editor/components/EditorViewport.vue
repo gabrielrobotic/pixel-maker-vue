@@ -6,6 +6,7 @@
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
     @pointerleave="handlePointerUp"
+    @wheel="handleWheel"
   >
     <EditorCanvas :width="size.width" :height="size.height" :transform />
   </div>
@@ -29,7 +30,7 @@ let isPanning = false;
 let lastPointerX = 0;
 let lastPointerY = 0;
 
-function getScreenMousePosition(event: PointerEvent): { x: number; y: number } | null {
+function getScreenMousePosition(event: PointerEvent | WheelEvent): { x: number; y: number } | null {
   if (!viewport.value) return null;
 
   const rect = viewport.value.getBoundingClientRect();
@@ -78,6 +79,26 @@ function handlePointerUp(event: PointerEvent) {
   viewport.value.releasePointerCapture(event.pointerId);
 
   isPanning = false;
+}
+
+function handleWheel(event: WheelEvent) {
+  const screen = getScreenMousePosition(event);
+  if (!screen) return;
+
+  const worldBefore = camera.screenToWorld(screen.x, screen.y);
+
+  const factor = event.deltaY < 0 ? 1.1 : 0.9;
+
+  camera.setZoom(camera.zoom * factor);
+
+  const worldAfter = camera.screenToWorld(screen.x, screen.y);
+
+  camera.setPosition(
+    camera.x + worldBefore.x - worldAfter.x,
+    camera.y + worldBefore.y - worldAfter.y,
+  );
+
+  transform.value = camera.getTransform();
 }
 
 onMounted(() => {
