@@ -1,5 +1,5 @@
-import vShaderRaw from "./shaders/default.vert?raw";
-import fShaderRaw from "./shaders/default.frag?raw";
+import vertexShaderSource from "./shaders/default.vert?raw";
+import fragmentShaderSource from "./shaders/default.frag?raw";
 import { ShaderProgram } from "./ShaderProgram";
 import type { Color } from "./types/Color";
 
@@ -22,7 +22,7 @@ export class WebGLRenderer {
 
     this.#gl = gl;
 
-    this.#program = new ShaderProgram(this.#gl, vShaderRaw, fShaderRaw);
+    this.#program = new ShaderProgram(this.#gl, vertexShaderSource, fragmentShaderSource);
 
     this.#buffer = this.#gl.createBuffer()!;
     this.#vao = this.#gl.createVertexArray()!;

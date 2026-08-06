@@ -3,6 +3,9 @@
     ref="viewport"
     class="relative h-full w-full overflow-hidden"
     @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointerleave="handlePointerUp"
   >
     <EditorCanvas :width="size.width" :height="size.height" :transform />
   </div>
@@ -22,24 +25,66 @@ const camera = new Camera();
 const size = ref({ width: 0, height: 0 });
 const transform = ref<Float32Array>(new Float32Array(9));
 
-function handlePointerDown(event: PointerEvent) {
-  if (!viewport.value) return;
+let isPanning = false;
+let lastPointerX = 0;
+let lastPointerY = 0;
+
+function getScreenMousePosition(event: PointerEvent): { x: number; y: number } | null {
+  if (!viewport.value) return null;
 
   const rect = viewport.value.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
+}
 
-  const screenX = event.clientX - rect.left;
-  const screenY = event.clientY - rect.top;
+function handlePointerDown(event: PointerEvent) {
+  if (event.button === 1) {
+    if (!viewport.value) return;
+    viewport.value.setPointerCapture(event.pointerId);
 
-  const world = camera.screenToWorld(screenX, screenY);
+    const screen = getScreenMousePosition(event);
+    if (!screen) return;
 
-  console.log(world);
+    const world = camera.screenToWorld(screen.x, screen.y);
+    console.log(world);
+
+    isPanning = true;
+    lastPointerX = screen.x;
+    lastPointerY = screen.y;
+  }
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (!isPanning) return;
+
+  const screen = getScreenMousePosition(event);
+  if (!screen) return;
+
+  const dx = screen.x - lastPointerX;
+  const dy = screen.y - lastPointerY;
+
+  camera.moveByScreen(dx, dy);
+
+  lastPointerX = screen.x;
+  lastPointerY = screen.y;
+
+  transform.value = camera.getTransform();
+}
+
+function handlePointerUp(event: PointerEvent) {
+  if (!viewport.value) return;
+  viewport.value.releasePointerCapture(event.pointerId);
+
+  isPanning = false;
 }
 
 onMounted(() => {
   if (!viewport.value) return;
 
   camera.setPosition(0.5, 0.5);
-  camera.setZoom(420);
+  camera.setZoom(50);
 
   resizeObserver = new ResizeObserver(([entry]: ResizeObserverEntry[]) => {
     if (!entry) return;

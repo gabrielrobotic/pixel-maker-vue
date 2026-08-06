@@ -58,4 +58,9 @@ export class Camera {
       y: (this.#height / 2 - y) / this.#zoom + this.#y,
     };
   }
+
+  moveByScreen(screenDx: number, screenDy: number): void {
+    this.#x -= screenDx / this.#zoom;
+    this.#y += screenDy / this.#zoom;
+  }
 }

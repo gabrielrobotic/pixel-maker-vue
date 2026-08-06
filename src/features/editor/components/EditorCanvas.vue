@@ -32,7 +32,7 @@ onUnmounted(() => {
 });
 
 watch(
-  () => [props.width, props.height],
+  () => [props.width, props.height, props.transform],
   () => {
     if (!renderer) return;
     renderer.resize(props.width, props.height);
