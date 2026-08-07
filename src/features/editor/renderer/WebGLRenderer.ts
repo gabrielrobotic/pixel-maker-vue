@@ -72,7 +72,6 @@ export class WebGLRenderer {
     this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
 
     this.#gl.bindVertexArray(this.#vao);
-    this.#drawPixel(new Pixel(0, 0));
     for (const pixel of grid) {
       this.#drawPixel(pixel);
     }

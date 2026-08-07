@@ -41,9 +41,6 @@ let lastPointerY = 0;
 const renderRequest = ref(0);
 
 const pixelGrid = new PixelGrid();
-pixelGrid.set(new Pixel(0, 0));
-pixelGrid.set(new Pixel(1, 0));
-pixelGrid.set(new Pixel(2, 1));
 
 function getScreenMousePosition(event: PointerEvent | WheelEvent): { x: number; y: number } | null {
   if (!viewport.value) return null;
