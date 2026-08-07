@@ -12,6 +12,7 @@ const props = defineProps<{
   height: number;
   transform: Float32Array;
   pixelGrid: PixelGrid;
+  renderRequest: number;
 }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -34,7 +35,7 @@ onUnmounted(() => {
 });
 
 watch(
-  () => [props.width, props.height, props.transform],
+  () => [props.width, props.height, props.transform, props.renderRequest],
   () => {
     if (!renderer) return;
     renderer.resize(props.width, props.height);

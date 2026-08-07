@@ -8,7 +8,13 @@
     @pointerleave="handlePointerUp"
     @wheel="handleWheel"
   >
-    <EditorCanvas :width="size.width" :height="size.height" :transform :pixel-grid="pixelGrid" />
+    <EditorCanvas
+      :width="size.width"
+      :height="size.height"
+      :transform
+      :pixel-grid="pixelGrid"
+      :render-request="renderRequest"
+    />
   </div>
 </template>
 
@@ -32,6 +38,8 @@ let isPanning = false;
 let lastPointerX = 0;
 let lastPointerY = 0;
 
+const renderRequest = ref(0);
+
 const pixelGrid = new PixelGrid();
 pixelGrid.set(new Pixel(0, 0));
 pixelGrid.set(new Pixel(1, 0));
@@ -48,6 +56,11 @@ function getScreenMousePosition(event: PointerEvent | WheelEvent): { x: number; 
 }
 
 function handlePointerDown(event: PointerEvent) {
+  if (event.button === 0) {
+    drawPixelAt(event);
+    return;
+  }
+
   if (event.button === 1) {
     if (!viewport.value) return;
     viewport.value.setPointerCapture(event.pointerId);
@@ -106,6 +119,23 @@ function handleWheel(event: WheelEvent) {
   );
 
   transform.value = camera.getTransform();
+}
+
+function setPixel(pixel: Pixel) {
+  pixelGrid.set(pixel);
+  renderRequest.value++;
+}
+
+function drawPixelAt(event: PointerEvent) {
+  const screen = getScreenMousePosition(event);
+  if (!screen) return;
+
+  const world = camera.screenToWorld(screen.x, screen.y);
+
+  const x = Math.floor(world.x);
+  const y = Math.floor(world.y);
+
+  setPixel(new Pixel(x, y));
 }
 
 onMounted(() => {
