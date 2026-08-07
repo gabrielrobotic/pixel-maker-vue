@@ -8,7 +8,7 @@
     @pointerleave="handlePointerUp"
     @wheel="handleWheel"
   >
-    <EditorCanvas :width="size.width" :height="size.height" :transform />
+    <EditorCanvas :width="size.width" :height="size.height" :transform :pixel-grid="pixelGrid" />
   </div>
 </template>
 
@@ -16,6 +16,8 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import EditorCanvas from "./EditorCanvas.vue";
 import { Camera } from "../camera/Camera";
+import { PixelGrid } from "../model/PixelGrid";
+import { Pixel } from "../model/Pixel";
 
 const viewport = ref<HTMLDivElement | null>(null);
 
@@ -29,6 +31,11 @@ const transform = ref<Float32Array>(new Float32Array(9));
 let isPanning = false;
 let lastPointerX = 0;
 let lastPointerY = 0;
+
+const pixelGrid = new PixelGrid();
+pixelGrid.set(new Pixel(0, 0));
+pixelGrid.set(new Pixel(1, 0));
+pixelGrid.set(new Pixel(2, 1));
 
 function getScreenMousePosition(event: PointerEvent | WheelEvent): { x: number; y: number } | null {
   if (!viewport.value) return null;

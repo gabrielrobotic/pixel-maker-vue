@@ -5,11 +5,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { WebGLRenderer } from "../renderer/WebGLRenderer";
+import { PixelGrid } from "../model/PixelGrid";
 
 const props = defineProps<{
   width: number;
   height: number;
   transform: Float32Array;
+  pixelGrid: PixelGrid;
 }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -22,7 +24,7 @@ onMounted(() => {
   renderer = new WebGLRenderer(canvas.value);
 
   renderer.setColor({ r: 1.0, g: 0.2, b: 0.8, a: 1.0 });
-  renderer.render(props.transform);
+  renderer.render(props.transform, props.pixelGrid);
 });
 
 onUnmounted(() => {
@@ -36,7 +38,7 @@ watch(
   () => {
     if (!renderer) return;
     renderer.resize(props.width, props.height);
-    renderer.render(props.transform);
+    renderer.render(props.transform, props.pixelGrid);
   },
 );
 </script>

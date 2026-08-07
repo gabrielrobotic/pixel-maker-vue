@@ -1,17 +1,33 @@
 import type { Pixel } from "./Pixel";
 
-export class PixelGrid {
-  readonly #width: number;
-  readonly #height: number;
+export class PixelGrid implements Iterable<Pixel> {
+  readonly #pixels: Map<string, Pixel> = new Map<string, Pixel>();
 
-  constructor(width: number, height: number) {
-    this.#width = width;
-    this.#height = height;
+  #key(x: number, y: number): string {
+    return `${x}:${y}`;
   }
 
-  getPixel(x: number, y: number): Pixel | null {
-    if (x < 0 || y < 0 || x >= this.#width || y >= this.#height) return null;
+  set(pixel: Pixel): void {
+    this.#pixels.set(this.#key(pixel.x, pixel.y), pixel);
+  }
 
-    return { x, y };
+  get(x: number, y: number): Pixel | null {
+    return this.#pixels.get(this.#key(x, y)) ?? null;
+  }
+
+  delete(x: number, y: number): boolean {
+    return this.#pixels.delete(this.#key(x, y));
+  }
+
+  clear(): void {
+    this.#pixels.clear();
+  }
+
+  has(x: number, y: number): boolean {
+    return this.#pixels.has(this.#key(x, y));
+  }
+
+  [Symbol.iterator](): Iterator<Pixel> {
+    return this.#pixels.values();
   }
 }
