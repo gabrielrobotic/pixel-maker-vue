@@ -4,6 +4,7 @@ import { ShaderProgram } from "./ShaderProgram";
 import type { Color } from "./types/Color";
 import { Pixel } from "../model/Pixel";
 import type { PixelGrid } from "../model/PixelGrid";
+import { GridRenderer } from "./grid/GridRenderer";
 
 export class WebGLRenderer {
   readonly #canvas: HTMLCanvasElement;
@@ -16,6 +17,8 @@ export class WebGLRenderer {
   readonly #colorLocation: WebGLUniformLocation | null;
   readonly #positionLocation: WebGLUniformLocation | null;
   readonly #transformLocation: WebGLUniformLocation | null;
+
+  readonly #gridRenderer: GridRenderer;
 
   constructor(canvas: HTMLCanvasElement) {
     this.#canvas = canvas;
@@ -48,6 +51,8 @@ export class WebGLRenderer {
     this.#transformLocation = this.#program.getUniformLocation("u_transform");
     this.#colorLocation = this.#program.getUniformLocation("u_color");
     this.#positionLocation = this.#program.getUniformLocation("u_position");
+
+    this.#gridRenderer = new GridRenderer(this.#gl);
   }
 
   resize(width: number, height: number): void {
@@ -76,12 +81,14 @@ export class WebGLRenderer {
       this.#drawPixel(pixel);
     }
     this.#gl.bindVertexArray(null);
+
+    this.#gridRenderer.render(transform);
   }
 
   dispose(): void {
     this.#gl.deleteBuffer(this.#buffer);
-    this.#gl.deleteProgram(this.#program);
     this.#gl.deleteVertexArray(this.#vao);
+    this.#program.dispose();
   }
 
   setColor(color: Color): void {
