@@ -1,5 +1,6 @@
 import gridVertShaderSource from "./shaders/grid.vert?raw";
 import gridFragShaderSource from "./shaders/grid.frag?raw";
+
 import { ShaderProgram } from "../ShaderProgram";
 
 export class GridRenderer {

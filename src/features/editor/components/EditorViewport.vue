@@ -6,7 +6,7 @@
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
     @pointerleave="handlePointerUp"
-    @wheel="handleWheel"
+    @wheel.prevent="handleWheel"
   >
     <EditorCanvas
       :width="size.width"
@@ -64,9 +64,6 @@ function handlePointerDown(event: PointerEvent) {
 
     const screen = getScreenMousePosition(event);
     if (!screen) return;
-
-    const world = camera.screenToWorld(screen.x, screen.y);
-    console.log(world);
 
     isPanning = true;
     lastPointerX = screen.x;

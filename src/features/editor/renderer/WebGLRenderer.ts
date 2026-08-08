@@ -1,23 +1,13 @@
-import vertexShaderSource from "./shaders/default.vert?raw";
-import fragmentShaderSource from "./shaders/default.frag?raw";
-import { ShaderProgram } from "./ShaderProgram";
 import type { Color } from "./types/Color";
-import { Pixel } from "../model/Pixel";
 import type { PixelGrid } from "../model/PixelGrid";
 import { GridRenderer } from "./grid/GridRenderer";
+import { PixelGridRenderer } from "./pixelGrid/PixelGridRenderer";
 
 export class WebGLRenderer {
   readonly #canvas: HTMLCanvasElement;
   readonly #gl: WebGL2RenderingContext;
 
-  readonly #program: ShaderProgram;
-  readonly #buffer: WebGLBuffer;
-  readonly #vao: WebGLVertexArrayObject;
-
-  readonly #colorLocation: WebGLUniformLocation | null;
-  readonly #positionLocation: WebGLUniformLocation | null;
-  readonly #transformLocation: WebGLUniformLocation | null;
-
+  readonly #pixelGridRenderer: PixelGridRenderer;
   readonly #gridRenderer: GridRenderer;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -28,30 +18,7 @@ export class WebGLRenderer {
 
     this.#gl = gl;
 
-    this.#program = new ShaderProgram(this.#gl, vertexShaderSource, fragmentShaderSource);
-
-    this.#buffer = this.#gl.createBuffer()!;
-    this.#vao = this.#gl.createVertexArray()!;
-
-    this.#gl.bindVertexArray(this.#vao);
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
-
-    this.#gl.bufferData(
-      this.#gl.ARRAY_BUFFER,
-      new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]),
-      this.#gl.STATIC_DRAW,
-    );
-
-    const position = this.#program.getAttribLocation("a_position");
-
-    this.#gl.enableVertexAttribArray(position);
-    this.#gl.vertexAttribPointer(position, 2, this.#gl.FLOAT, false, 0, 0);
-    this.#gl.bindVertexArray(null);
-
-    this.#transformLocation = this.#program.getUniformLocation("u_transform");
-    this.#colorLocation = this.#program.getUniformLocation("u_color");
-    this.#positionLocation = this.#program.getUniformLocation("u_position");
-
+    this.#pixelGridRenderer = new PixelGridRenderer(this.#gl);
     this.#gridRenderer = new GridRenderer(this.#gl);
   }
 
@@ -72,34 +39,16 @@ export class WebGLRenderer {
     this.#gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 
-    this.#program.use();
-
-    this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
-
-    this.#gl.bindVertexArray(this.#vao);
-    for (const pixel of grid) {
-      this.#drawPixel(pixel);
-    }
-    this.#gl.bindVertexArray(null);
-
+    this.#pixelGridRenderer.render(transform, grid);
     this.#gridRenderer.render(transform);
   }
 
-  dispose(): void {
-    this.#gl.deleteBuffer(this.#buffer);
-    this.#gl.deleteVertexArray(this.#vao);
-    this.#program.dispose();
+  dispose() {
+    this.#pixelGridRenderer.dispose();
+    this.#gridRenderer.dispose();
   }
 
   setColor(color: Color): void {
-    this.#program.use();
-
-    if (!this.#colorLocation) return;
-    this.#gl.uniform4f(this.#colorLocation, color.r, color.g, color.b, color.a);
-  }
-
-  #drawPixel(pixel: Pixel) {
-    this.#gl.uniform2f(this.#positionLocation, pixel.x, pixel.y);
-    this.#gl.drawArrays(this.#gl.TRIANGLE_STRIP, 0, 4);
+    this.#pixelGridRenderer.setColor(color);
   }
 }

@@ -38,6 +38,7 @@ watch(
   () => [props.width, props.height, props.transform, props.renderRequest],
   () => {
     if (!renderer) return;
+    renderer.setColor({ r: Math.random(), g: Math.random(), b: Math.random(), a: Math.random() });
     renderer.resize(props.width, props.height);
     renderer.render(props.transform, props.pixelGrid);
   },
