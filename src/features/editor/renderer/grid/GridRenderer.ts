@@ -2,6 +2,7 @@ import gridVertShaderSource from "./shaders/grid.vert?raw";
 import gridFragShaderSource from "./shaders/grid.frag?raw";
 
 import { ShaderProgram } from "../ShaderProgram";
+import type { Color } from "../types/Color";
 
 export class GridRenderer {
   readonly #gl: WebGL2RenderingContext;
@@ -11,6 +12,7 @@ export class GridRenderer {
   readonly #buffer: WebGLBuffer;
 
   readonly #transformLocation: WebGLUniformLocation | null;
+  readonly #colorLocation: WebGLUniformLocation | null;
 
   readonly #vertexCount: number;
 
@@ -26,9 +28,7 @@ export class GridRenderer {
     this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
 
     const vertices = this.#createVertices();
-
     this.#vertexCount = vertices.length / 2;
-
     this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(vertices), this.#gl.STATIC_DRAW);
 
     const position = this.#program.getAttribLocation("a_position");
@@ -38,6 +38,7 @@ export class GridRenderer {
     this.#gl.bindVertexArray(null);
 
     this.#transformLocation = this.#program.getUniformLocation("u_transform");
+    this.#colorLocation = this.#program.getUniformLocation("u_color");
   }
 
   render(transform: Float32Array): void {
@@ -54,6 +55,13 @@ export class GridRenderer {
     this.#gl.deleteBuffer(this.#buffer);
     this.#gl.deleteVertexArray(this.#vao);
     this.#program.dispose();
+  }
+
+  setColor(color: Color): void {
+    this.#program.use();
+
+    if (!this.#colorLocation) return;
+    this.#gl.uniform4f(this.#colorLocation, color.r, color.g, color.b, color.a);
   }
 
   #createVertices(): number[] {

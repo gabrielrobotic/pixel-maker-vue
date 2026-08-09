@@ -50,5 +50,6 @@ export class WebGLRenderer {
 
   setColor(color: Color): void {
     this.#pixelGridRenderer.setColor(color);
+    this.#gridRenderer.setColor({ r: 0.25, g: 0.25, b: 0.25, a: 1.0 });
   }
 }
