@@ -6,13 +6,13 @@
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { WebGLRenderer } from "../renderer/WebGLRenderer";
 import { PixelGrid } from "../model/PixelGrid";
-import type { Bounds } from "../renderer/types/Bounds";
 
 const props = defineProps<{
   width: number;
   height: number;
   transform: Float32Array;
-  visibleBounds: Bounds;
+  cameraPosition: { x: number; y: number };
+  zoom: number;
   pixelGrid: PixelGrid;
   renderRequest: number;
 }>();
@@ -23,16 +23,11 @@ let renderer: WebGLRenderer | null = null;
 
 onMounted(() => {
   if (!canvas.value) return;
-
   renderer = new WebGLRenderer(canvas.value);
-
-  renderer.setColor({ r: 1.0, g: 0.2, b: 0.8, a: 1.0 });
-  renderer.render(props.transform, props.visibleBounds, props.pixelGrid);
 });
 
 onUnmounted(() => {
   if (!renderer) return;
-
   renderer.dispose();
 });
 
@@ -40,9 +35,9 @@ watch(
   () => [props.width, props.height, props.transform, props.renderRequest],
   () => {
     if (!renderer) return;
-    renderer.setColor({ r: 0.7, g: 0.4, b: 0.7, a: 1.0 });
+    renderer.setColor({ r: 0.5, g: 0.4, b: 0.8, a: 1.0 });
     renderer.resize(props.width, props.height);
-    renderer.render(props.transform, props.visibleBounds, props.pixelGrid);
+    renderer.render(props.transform, props.cameraPosition, props.zoom, props.pixelGrid);
   },
 );
 </script>

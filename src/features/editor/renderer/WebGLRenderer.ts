@@ -2,7 +2,6 @@ import type { Color } from "./types/Color";
 import type { PixelGrid } from "../model/PixelGrid";
 import { GridRenderer } from "./grid/GridRenderer";
 import { PixelGridRenderer } from "./pixelGrid/PixelGridRenderer";
-import type { Bounds } from "./types/Bounds";
 
 export class WebGLRenderer {
   readonly #canvas: HTMLCanvasElement;
@@ -18,6 +17,9 @@ export class WebGLRenderer {
     if (!gl) throw new Error("WebGL 2.0 não está disponível.");
 
     this.#gl = gl;
+
+    this.#gl.enable(this.#gl.BLEND);
+    this.#gl.blendFunc(this.#gl.SRC_ALPHA, this.#gl.ONE_MINUS_SRC_ALPHA);
 
     this.#pixelGridRenderer = new PixelGridRenderer(this.#gl);
     this.#gridRenderer = new GridRenderer(this.#gl);
@@ -36,12 +38,20 @@ export class WebGLRenderer {
     this.#gl.viewport(0, 0, pixelWidth, pixelHeight);
   }
 
-  render(transform: Float32Array, visibleBounds: Bounds, grid: PixelGrid): void {
+  render(
+    transform: Float32Array,
+    camera: { x: number; y: number },
+    zoom: number,
+    grid: PixelGrid,
+  ): void {
     this.#gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 
     this.#pixelGridRenderer.render(transform, grid);
-    this.#gridRenderer.render(transform, visibleBounds);
+    this.#gridRenderer.render(camera, zoom, {
+      width: this.#canvas.width,
+      height: this.#canvas.height,
+    });
   }
 
   dispose(): void {
@@ -51,6 +61,6 @@ export class WebGLRenderer {
 
   setColor(color: Color): void {
     this.#pixelGridRenderer.setColor(color);
-    this.#gridRenderer.setColor({ r: 0.25, g: 0.25, b: 0.25, a: 1.0 });
+    this.#gridRenderer.setColor({ r: 0.65, g: 0.25, b: 0.25, a: 1.0 });
   }
 }

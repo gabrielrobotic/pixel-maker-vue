@@ -3,7 +3,6 @@ import gridFragShaderSource from "./shaders/grid.frag?raw";
 
 import { ShaderProgram } from "../ShaderProgram";
 import type { Color } from "../types/Color";
-import type { Bounds } from "../types/Bounds";
 
 export class GridRenderer {
   readonly #gl: WebGL2RenderingContext;
@@ -12,10 +11,11 @@ export class GridRenderer {
   readonly #vao: WebGLVertexArrayObject;
   readonly #buffer: WebGLBuffer;
 
-  readonly #transformLocation: WebGLUniformLocation | null;
   readonly #colorLocation: WebGLUniformLocation | null;
+  readonly #viewportSizeLocation: WebGLUniformLocation | null;
+  readonly #cameraPositionLocation: WebGLUniformLocation | null;
+  readonly #zoomLocation: WebGLUniformLocation | null;
 
-  #lastVisibleBounds: Bounds | null = null;
   #vertexCount: number = 0;
 
   constructor(gl: WebGL2RenderingContext) {
@@ -29,41 +29,35 @@ export class GridRenderer {
     this.#gl.bindVertexArray(this.#vao);
     this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
 
+    const vertices = [-1, -1, 1, -1, -1, 1, 1, 1];
+    this.#vertexCount = 4;
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(vertices), this.#gl.STATIC_DRAW);
+
     const position = this.#program.getAttribLocation("a_position");
 
     this.#gl.enableVertexAttribArray(position);
     this.#gl.vertexAttribPointer(position, 2, this.#gl.FLOAT, false, 0, 0);
     this.#gl.bindVertexArray(null);
 
-    this.#transformLocation = this.#program.getUniformLocation("u_transform");
     this.#colorLocation = this.#program.getUniformLocation("u_color");
+    this.#viewportSizeLocation = this.#program.getUniformLocation("u_viewportSize");
+    this.#cameraPositionLocation = this.#program.getUniformLocation("u_cameraPosition");
+    this.#zoomLocation = this.#program.getUniformLocation("u_zoom");
   }
 
-  render(transform: Float32Array, visibleBounds: Bounds): void {
-    const boundsChanged =
-      !this.#lastVisibleBounds ||
-      this.#lastVisibleBounds.minX !== visibleBounds.minX ||
-      this.#lastVisibleBounds.maxX !== visibleBounds.maxX ||
-      this.#lastVisibleBounds.minY !== visibleBounds.minY ||
-      this.#lastVisibleBounds.maxY !== visibleBounds.maxY;
-
-    if (boundsChanged) {
-      const vertices = this.#createVertices(visibleBounds);
-
-      this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
-      this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(vertices), this.#gl.DYNAMIC_DRAW);
-
-      this.#vertexCount = vertices.length / 2;
-      this.#lastVisibleBounds = { ...visibleBounds };
-    }
-
+  render(
+    cameraPosition: { x: number; y: number },
+    zoom: number,
+    viewportSize: { width: number; height: number },
+  ): void {
     this.#program.use();
 
-    this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
+    this.#gl.uniform2f(this.#viewportSizeLocation, viewportSize.width, viewportSize.height);
+    this.#gl.uniform2f(this.#cameraPositionLocation, cameraPosition.x, cameraPosition.y);
+    this.#gl.uniform1f(this.#zoomLocation, zoom);
 
     this.#gl.bindVertexArray(this.#vao);
-
-    this.#gl.drawArrays(this.#gl.LINES, 0, this.#vertexCount);
+    this.#gl.drawArrays(this.#gl.TRIANGLE_STRIP, 0, this.#vertexCount);
     this.#gl.bindVertexArray(null);
   }
 
@@ -78,24 +72,5 @@ export class GridRenderer {
 
     if (!this.#colorLocation) return;
     this.#gl.uniform4f(this.#colorLocation, color.r, color.g, color.b, color.a);
-  }
-
-  #createVertices(bounds: Bounds): number[] {
-    const vertices: number[] = [];
-
-    const minX = Math.floor(bounds.minX) - 0;
-    const maxX = Math.ceil(bounds.maxX) + 0;
-    const minY = Math.floor(bounds.minY) - 0;
-    const maxY = Math.ceil(bounds.maxY) + 0;
-
-    for (let x = minX; x <= maxX; x++) {
-      vertices.push(x, minY, x, maxY);
-    }
-
-    for (let y = minY; y <= maxY; y++) {
-      vertices.push(minX, y, maxX, y);
-    }
-
-    return vertices;
   }
 }

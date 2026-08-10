@@ -12,7 +12,8 @@
       :width="size.width"
       :height="size.height"
       :transform
-      :visible-bounds="visibleBounds"
+      :camera-position="cameraPosition"
+      :zoom
       :pixel-grid="pixelGrid"
       :render-request="renderRequest"
     />
@@ -25,7 +26,6 @@ import EditorCanvas from "./EditorCanvas.vue";
 import { Camera } from "../camera/Camera";
 import { PixelGrid } from "../model/PixelGrid";
 import { Pixel } from "../model/Pixel";
-import type { Bounds } from "../renderer/types/Bounds";
 
 const viewport = ref<HTMLDivElement | null>(null);
 
@@ -35,7 +35,8 @@ const camera = new Camera();
 
 const size = ref({ width: 0, height: 0 });
 const transform = ref<Float32Array>(new Float32Array(9));
-const visibleBounds = ref<Bounds>(camera.getVisibleBounds());
+const cameraPosition = ref<{ x: number; y: number }>({ x: camera.x, y: camera.y });
+const zoom = ref(camera.zoom);
 
 let isPanning = false;
 let lastPointerX = 0;
@@ -89,7 +90,7 @@ function handlePointerMove(event: PointerEvent) {
   lastPointerY = screen.y;
 
   transform.value = camera.getTransform();
-  visibleBounds.value = camera.getVisibleBounds();
+  cameraPosition.value = { x: camera.x, y: camera.y };
 }
 
 function handlePointerUp(event: PointerEvent) {
@@ -117,7 +118,8 @@ function handleWheel(event: WheelEvent) {
   );
 
   transform.value = camera.getTransform();
-  visibleBounds.value = camera.getVisibleBounds();
+  cameraPosition.value = { x: camera.x, y: camera.y };
+  zoom.value = camera.zoom;
 }
 
 function setPixel(pixel: Pixel) {
@@ -151,7 +153,8 @@ onMounted(() => {
     size.value = { width, height };
 
     transform.value = camera.getTransform();
-    visibleBounds.value = camera.getVisibleBounds();
+    cameraPosition.value = { x: camera.x, y: camera.y };
+    zoom.value = camera.zoom;
   });
 
   resizeObserver.observe(viewport.value);
