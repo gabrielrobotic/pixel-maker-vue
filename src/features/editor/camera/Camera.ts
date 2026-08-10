@@ -1,3 +1,5 @@
+import type { Bounds } from "../renderer/types/Bounds";
+
 export class Camera {
   #x: number = 0;
   #y: number = 0;
@@ -36,6 +38,18 @@ export class Camera {
       -this.#y * sy,
       1,
     ]);
+  }
+
+  getVisibleBounds(): Bounds {
+    const worldWidth = this.#width / this.#zoom;
+    const worldHeight = this.#height / this.#zoom;
+
+    return {
+      minX: this.#x - worldWidth / 2,
+      maxX: this.#x + worldWidth / 2,
+      minY: this.#y - worldHeight / 2,
+      maxY: this.#y + worldHeight / 2,
+    };
   }
 
   setViewport(width: number, height: number): void {

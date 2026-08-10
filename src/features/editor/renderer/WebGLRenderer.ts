@@ -2,6 +2,7 @@ import type { Color } from "./types/Color";
 import type { PixelGrid } from "../model/PixelGrid";
 import { GridRenderer } from "./grid/GridRenderer";
 import { PixelGridRenderer } from "./pixelGrid/PixelGridRenderer";
+import type { Bounds } from "./types/Bounds";
 
 export class WebGLRenderer {
   readonly #canvas: HTMLCanvasElement;
@@ -35,15 +36,15 @@ export class WebGLRenderer {
     this.#gl.viewport(0, 0, pixelWidth, pixelHeight);
   }
 
-  render(transform: Float32Array, grid: PixelGrid): void {
+  render(transform: Float32Array, visibleBounds: Bounds, grid: PixelGrid): void {
     this.#gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 
     this.#pixelGridRenderer.render(transform, grid);
-    this.#gridRenderer.render(transform);
+    this.#gridRenderer.render(transform, visibleBounds);
   }
 
-  dispose() {
+  dispose(): void {
     this.#pixelGridRenderer.dispose();
     this.#gridRenderer.dispose();
   }
