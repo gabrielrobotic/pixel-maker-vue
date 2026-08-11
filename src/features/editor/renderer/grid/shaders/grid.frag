@@ -38,33 +38,49 @@ void main() {
   vec2 world =
     clip / scale + u_cameraPosition;
 
-  float grid1 =
-    gridLine(world, 1.0);
+  float targetCells =
+    10.0;
 
-  float grid10 =
-    gridLine(world, 10.0);
-
-  float grid100 =
-    gridLine(world, 100.0);
-
-  float gridTransition100 =
-    smoothstep(1.0, 20.0, u_zoom);
-
-  float gridCoarse =
-    mix(
-      grid100,
-      grid10 * 0.5,
-      gridTransition100
+  float viewportSize =
+    max(
+      u_viewportSize.x,
+      u_viewportSize.y
     );
 
-  float gridTransition1 =
-    smoothstep(10.0, 100.0, u_zoom);
+  float desiredSpacing =
+    u_viewportSize.x /
+      (targetCells * u_zoom);
+
+  float spacing =
+    pow(
+      8.0,
+      floor(log(desiredSpacing) / log(10.0))
+    );
+
+  float nextSpacing =
+    spacing * 8.0;
+
+  float ratio =
+    desiredSpacing / spacing;
+
+  float transition =
+    smoothstep(
+      0.25,
+      10.0,
+      ratio
+    );
+
+  float currentGrid =
+    gridLine(world, spacing) * 0.25;
+
+  float nextGrid =
+    gridLine(world, nextSpacing) * 0.5;
 
   float grid =
     mix(
-      gridCoarse,
-      grid1 * 0.25,
-      gridTransition1
+      currentGrid,
+      nextGrid,
+      transition
     );
 
   outColor = vec4(

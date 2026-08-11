@@ -142,8 +142,7 @@ function drawPixelAt(event: PointerEvent) {
 onMounted(() => {
   if (!viewport.value) return;
 
-  camera.setPosition(0.5, 0.5);
-  camera.setZoom(50);
+  camera.setZoom(18.15);
 
   resizeObserver = new ResizeObserver(([entry]: ResizeObserverEntry[]) => {
     if (!entry) return;

@@ -3,7 +3,7 @@ import type { Bounds } from "../renderer/types/Bounds";
 export class Camera {
   #x: number = 0;
   #y: number = 0;
-  #zoom: number = 50;
+  #zoom: number = 1;
 
   #width: number = 0;
   #height: number = 0;
@@ -63,7 +63,7 @@ export class Camera {
   }
 
   setZoom(zoom: number): void {
-    this.#zoom = Math.max(0.1, zoom);
+    this.#zoom = Math.min(120, Math.max(0.01, zoom));
   }
 
   screenToWorld(x: number, y: number): { x: number; y: number } {
