@@ -26,6 +26,7 @@ import EditorCanvas from "./EditorCanvas.vue";
 import { Camera } from "../camera/Camera";
 import { PixelGrid } from "../model/PixelGrid";
 import { Pixel } from "../model/Pixel";
+import { add, floor, sub, type Vec2 } from "@/shared/math/Vec2";
 
 const viewport = ref<HTMLDivElement | null>(null);
 
@@ -35,18 +36,23 @@ const camera = new Camera();
 
 const size = ref({ width: 0, height: 0 });
 const transform = ref<Float32Array>(new Float32Array(9));
-const cameraPosition = ref<{ x: number; y: number }>({ x: camera.x, y: camera.y });
+const cameraPosition = ref<Vec2>(camera.position);
 const zoom = ref(camera.zoom);
 
 let isPanning = false;
-let lastPointerX = 0;
-let lastPointerY = 0;
+let lastPointer: Vec2 = { x: 0, y: 0 };
 
 const renderRequest = ref(0);
 
 const pixelGrid = new PixelGrid();
 
-function getScreenMousePosition(event: PointerEvent | WheelEvent): { x: number; y: number } | null {
+function syncCamera(): void {
+  transform.value = camera.getTransform();
+  cameraPosition.value = camera.position;
+  zoom.value = camera.zoom;
+}
+
+function getScreenMousePosition(event: PointerEvent | WheelEvent): Vec2 | null {
   if (!viewport.value) return null;
 
   const rect = viewport.value.getBoundingClientRect();
@@ -70,8 +76,7 @@ function handlePointerDown(event: PointerEvent) {
     if (!screen) return;
 
     isPanning = true;
-    lastPointerX = screen.x;
-    lastPointerY = screen.y;
+    lastPointer = screen;
   }
 }
 
@@ -81,16 +86,13 @@ function handlePointerMove(event: PointerEvent) {
   const screen = getScreenMousePosition(event);
   if (!screen) return;
 
-  const dx = screen.x - lastPointerX;
-  const dy = screen.y - lastPointerY;
+  const delta = sub(screen, lastPointer);
+  camera.moveByScreen(delta);
 
-  camera.moveByScreen(dx, dy);
-
-  lastPointerX = screen.x;
-  lastPointerY = screen.y;
+  lastPointer = screen;
 
   transform.value = camera.getTransform();
-  cameraPosition.value = { x: camera.x, y: camera.y };
+  cameraPosition.value = camera.position;
 }
 
 function handlePointerUp(event: PointerEvent) {
@@ -107,19 +109,15 @@ function handleWheel(event: WheelEvent) {
   const worldBefore = camera.screenToWorld(screen.x, screen.y);
 
   const factor = event.deltaY < 0 ? 1.1 : 0.9;
-
   camera.setZoom(camera.zoom * factor);
 
   const worldAfter = camera.screenToWorld(screen.x, screen.y);
 
-  camera.setPosition(
-    camera.x + worldBefore.x - worldAfter.x,
-    camera.y + worldBefore.y - worldAfter.y,
-  );
+  const correction = sub(worldBefore, worldAfter);
+  const position = add(camera.position, correction);
+  camera.setPosition(position);
 
-  transform.value = camera.getTransform();
-  cameraPosition.value = { x: camera.x, y: camera.y };
-  zoom.value = camera.zoom;
+  syncCamera();
 }
 
 function setPixel(pixel: Pixel) {
@@ -132,11 +130,8 @@ function drawPixelAt(event: PointerEvent) {
   if (!screen) return;
 
   const world = camera.screenToWorld(screen.x, screen.y);
-
-  const x = Math.floor(world.x);
-  const y = Math.floor(world.y);
-
-  setPixel(new Pixel(x, y));
+  const pixel = floor(world);
+  setPixel(new Pixel(pixel.x, pixel.y));
 }
 
 onMounted(() => {
@@ -151,9 +146,7 @@ onMounted(() => {
     camera.setViewport(width, height);
     size.value = { width, height };
 
-    transform.value = camera.getTransform();
-    cameraPosition.value = { x: camera.x, y: camera.y };
-    zoom.value = camera.zoom;
+    syncCamera();
   });
 
   resizeObserver.observe(viewport.value);

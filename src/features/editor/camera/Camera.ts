@@ -1,3 +1,4 @@
+import type { Vec2 } from "@/shared/math/Vec2";
 import type { Bounds } from "../renderer/types/Bounds";
 
 export class Camera {
@@ -8,16 +9,15 @@ export class Camera {
   #width: number = 0;
   #height: number = 0;
 
-  get x(): number {
-    return this.#x;
-  }
-
-  get y(): number {
-    return this.#y;
-  }
-
   get zoom(): number {
     return this.#zoom;
+  }
+
+  get position(): Vec2 {
+    return {
+      x: this.#x,
+      y: this.#y,
+    };
   }
 
   getTransform(): Float32Array {
@@ -57,24 +57,24 @@ export class Camera {
     this.#height = height;
   }
 
-  setPosition(x: number, y: number): void {
-    this.#x = x;
-    this.#y = y;
+  setPosition(position: Vec2): void {
+    this.#x = position.x;
+    this.#y = position.y;
   }
 
   setZoom(zoom: number): void {
     this.#zoom = Math.min(120, Math.max(0.01, zoom));
   }
 
-  screenToWorld(x: number, y: number): { x: number; y: number } {
+  screenToWorld(x: number, y: number): Vec2 {
     return {
       x: (x - this.#width / 2) / this.#zoom + this.#x,
       y: (this.#height / 2 - y) / this.#zoom + this.#y,
     };
   }
 
-  moveByScreen(screenDx: number, screenDy: number): void {
-    this.#x -= screenDx / this.#zoom;
-    this.#y += screenDy / this.#zoom;
+  moveByScreen(screenDelta: Vec2): void {
+    this.#x -= screenDelta.x / this.#zoom;
+    this.#y += screenDelta.y / this.#zoom;
   }
 }
