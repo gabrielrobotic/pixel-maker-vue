@@ -27,6 +27,7 @@ import { Camera } from "../camera/Camera";
 import { PixelGrid } from "../model/PixelGrid";
 import { Pixel } from "../model/Pixel";
 import { add, floor, sub, type Vec2 } from "@/shared/math/Vec2";
+import { PencilTool } from "../tools/PencilTool";
 
 const viewport = ref<HTMLDivElement | null>(null);
 
@@ -45,6 +46,9 @@ let lastPointer: Vec2 = { x: 0, y: 0 };
 const renderRequest = ref(0);
 
 const pixelGrid = new PixelGrid();
+const pencilTool = new PencilTool(pixelGrid);
+
+let isDrawing = false;
 
 function syncCamera(): void {
   transform.value = camera.getTransform();
@@ -64,6 +68,7 @@ function getScreenMousePosition(event: PointerEvent | WheelEvent): Vec2 | null {
 
 function handlePointerDown(event: PointerEvent) {
   if (event.button === 0) {
+    isDrawing = true;
     drawPixelAt(event);
     return;
   }
@@ -81,24 +86,30 @@ function handlePointerDown(event: PointerEvent) {
 }
 
 function handlePointerMove(event: PointerEvent) {
-  if (!isPanning) return;
+  if (isDrawing) {
+    drawPixelAt(event);
+  }
 
-  const screen = getScreenMousePosition(event);
-  if (!screen) return;
+  if (isPanning) {
+    const screen = getScreenMousePosition(event);
+    if (!screen) return;
 
-  const delta = sub(screen, lastPointer);
-  camera.moveByScreen(delta);
+    const delta = sub(screen, lastPointer);
+    camera.moveByScreen(delta);
 
-  lastPointer = screen;
+    lastPointer = screen;
 
-  transform.value = camera.getTransform();
-  cameraPosition.value = camera.position;
+    transform.value = camera.getTransform();
+    cameraPosition.value = camera.position;
+  }
 }
 
 function handlePointerUp(event: PointerEvent) {
   if (!viewport.value) return;
   viewport.value.releasePointerCapture(event.pointerId);
 
+  isDrawing = false;
+  pencilTool.endStroke();
   isPanning = false;
 }
 
@@ -120,18 +131,15 @@ function handleWheel(event: WheelEvent) {
   syncCamera();
 }
 
-function setPixel(pixel: Pixel) {
-  pixelGrid.set(pixel);
-  renderRequest.value++;
-}
-
 function drawPixelAt(event: PointerEvent) {
   const screen = getScreenMousePosition(event);
   if (!screen) return;
 
   const world = camera.screenToWorld(screen.x, screen.y);
   const pixel = floor(world);
-  setPixel(new Pixel(pixel.x, pixel.y));
+  pencilTool.draw(new Pixel(pixel.x, pixel.y));
+
+  renderRequest.value++;
 }
 
 onMounted(() => {
