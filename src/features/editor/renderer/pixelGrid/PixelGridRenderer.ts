@@ -3,7 +3,6 @@ import pixelFragShaderSource from "./shaders/pixel.frag?raw";
 
 import { ShaderProgram } from "../ShaderProgram";
 import type { PixelGrid } from "../../model/PixelGrid";
-import type { Pixel } from "../../model/Pixel";
 import type { Color } from "../types/Color";
 
 export class PixelGridRenderer {
@@ -12,8 +11,8 @@ export class PixelGridRenderer {
   readonly #program: ShaderProgram;
   readonly #vao: WebGLVertexArrayObject;
   readonly #buffer: WebGLBuffer;
+  readonly #instanceBuffer: WebGLBuffer;
 
-  readonly #positionLocation: WebGLUniformLocation | null;
   readonly #transformLocation: WebGLUniformLocation | null;
   readonly #colorLocation: WebGLUniformLocation | null;
 
@@ -24,10 +23,12 @@ export class PixelGridRenderer {
 
     this.#vao = this.#gl.createVertexArray()!;
     this.#buffer = this.#gl.createBuffer()!;
+    this.#instanceBuffer = this.#gl.createBuffer()!;
 
     this.#gl.bindVertexArray(this.#vao);
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
 
+    // Geometria base do pixel
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#buffer);
     const pixelShape = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
     this.#gl.bufferData(this.#gl.ARRAY_BUFFER, pixelShape, this.#gl.STATIC_DRAW);
 
@@ -35,9 +36,17 @@ export class PixelGridRenderer {
 
     this.#gl.enableVertexAttribArray(position);
     this.#gl.vertexAttribPointer(position, 2, this.#gl.FLOAT, false, 0, 0);
+
+    // Posição de cada instância
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#instanceBuffer);
+    const instancePosition = this.#program.getAttribLocation("a_instancePosition");
+
+    this.#gl.enableVertexAttribArray(instancePosition);
+    this.#gl.vertexAttribPointer(instancePosition, 2, this.#gl.FLOAT, false, 0, 0);
+    this.#gl.vertexAttribDivisor(instancePosition, 1);
+
     this.#gl.bindVertexArray(null);
 
-    this.#positionLocation = this.#program.getUniformLocation("u_position");
     this.#transformLocation = this.#program.getUniformLocation("u_transform");
     this.#colorLocation = this.#program.getUniformLocation("u_color");
   }
@@ -47,10 +56,23 @@ export class PixelGridRenderer {
 
     this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
 
-    this.#gl.bindVertexArray(this.#vao);
+    const positions = new Float32Array(pixelGrid.size * 2);
+
+    let index = 0;
+
     for (const pixel of pixelGrid) {
-      this.#drawPixel(pixel);
+      positions[index++] = pixel.x;
+      positions[index++] = pixel.y;
     }
+
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#instanceBuffer);
+
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, positions, this.#gl.DYNAMIC_DRAW);
+
+    this.#gl.bindVertexArray(this.#vao);
+
+    this.#gl.drawArraysInstanced(this.#gl.TRIANGLE_STRIP, 0, 4, positions.length / 2);
+
     this.#gl.bindVertexArray(null);
   }
 
@@ -58,6 +80,7 @@ export class PixelGridRenderer {
     this.#program.dispose();
     this.#gl.deleteVertexArray(this.#vao);
     this.#gl.deleteBuffer(this.#buffer);
+    this.#gl.deleteBuffer(this.#instanceBuffer);
   }
 
   setColor(color: Color): void {
@@ -65,10 +88,5 @@ export class PixelGridRenderer {
 
     if (!this.#colorLocation) return;
     this.#gl.uniform4f(this.#colorLocation, color.r, color.g, color.b, color.a);
-  }
-
-  #drawPixel(pixel: Pixel): void {
-    this.#gl.uniform2f(this.#positionLocation, pixel.x, pixel.y);
-    this.#gl.drawArrays(this.#gl.TRIANGLE_STRIP, 0, 4);
   }
 }

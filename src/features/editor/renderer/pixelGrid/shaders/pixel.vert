@@ -1,12 +1,12 @@
 #version 300 es
 
 in vec2 a_position;
+in vec2 a_instancePosition;
 
-uniform vec2 u_position;
 uniform mat3 u_transform;
 
 void main() {
-  vec2 worldPosition = a_position + u_position;
+  vec2 worldPosition = a_position + a_instancePosition;
 
   vec3 position = u_transform * vec3(worldPosition, 1.0);
 

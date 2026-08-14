@@ -7,6 +7,10 @@ export class PixelGrid implements Iterable<Pixel> {
     return `${x}:${y}`;
   }
 
+  get size(): number {
+    return this.#pixels.size;
+  }
+
   set(pixel: Pixel): void {
     this.#pixels.set(this.#key(pixel.x, pixel.y), pixel);
   }
