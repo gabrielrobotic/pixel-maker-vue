@@ -1,7 +1,8 @@
 import type { Color } from "./types/Color";
-import type { PixelGrid } from "../model/PixelGrid";
 import { GridRenderer } from "./grid/GridRenderer";
 import { PixelGridRenderer } from "./pixelGrid/PixelGridRenderer";
+import type { Vec2 } from "@/shared/math/Vec2";
+import type { PixelGrid } from "../model/PixelGrid";
 
 export class WebGLRenderer {
   readonly #canvas: HTMLCanvasElement;
@@ -38,16 +39,15 @@ export class WebGLRenderer {
     this.#gl.viewport(0, 0, pixelWidth, pixelHeight);
   }
 
-  render(
-    transform: Float32Array,
-    camera: { x: number; y: number },
-    zoom: number,
-    grid: PixelGrid,
-  ): void {
+  updatePixels(pixelGrid: PixelGrid): void {
+    this.#pixelGridRenderer.updatePixels(pixelGrid);
+  }
+
+  render(transform: Float32Array, camera: Vec2, zoom: number): void {
     this.#gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.#gl.clear(this.#gl.COLOR_BUFFER_BIT);
 
-    this.#pixelGridRenderer.render(transform, grid);
+    this.#pixelGridRenderer.render(transform);
     this.#gridRenderer.render(camera, zoom, {
       width: this.#canvas.width,
       height: this.#canvas.height,

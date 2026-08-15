@@ -16,6 +16,8 @@ export class PixelGridRenderer {
   readonly #transformLocation: WebGLUniformLocation | null;
   readonly #colorLocation: WebGLUniformLocation | null;
 
+  #instanceCount = 0;
+
   constructor(gl: WebGL2RenderingContext) {
     this.#gl = gl;
 
@@ -51,11 +53,7 @@ export class PixelGridRenderer {
     this.#colorLocation = this.#program.getUniformLocation("u_color");
   }
 
-  render(transform: Float32Array, pixelGrid: PixelGrid): void {
-    this.#program.use();
-
-    this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
-
+  updatePixels(pixelGrid: PixelGrid): void {
     const positions = new Float32Array(pixelGrid.size * 2);
 
     let index = 0;
@@ -69,9 +67,17 @@ export class PixelGridRenderer {
 
     this.#gl.bufferData(this.#gl.ARRAY_BUFFER, positions, this.#gl.DYNAMIC_DRAW);
 
+    this.#instanceCount = pixelGrid.size;
+  }
+
+  render(transform: Float32Array): void {
+    this.#program.use();
+
+    this.#gl.uniformMatrix3fv(this.#transformLocation, false, transform);
+
     this.#gl.bindVertexArray(this.#vao);
 
-    this.#gl.drawArraysInstanced(this.#gl.TRIANGLE_STRIP, 0, 4, positions.length / 2);
+    this.#gl.drawArraysInstanced(this.#gl.TRIANGLE_STRIP, 0, 4, this.#instanceCount);
 
     this.#gl.bindVertexArray(null);
   }

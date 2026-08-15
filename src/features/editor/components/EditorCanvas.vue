@@ -15,6 +15,7 @@ const props = defineProps<{
   zoom: number;
   pixelGrid: PixelGrid;
   renderRequest: number;
+  pixelUpdateRequest: number;
 }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -37,7 +38,15 @@ watch(
     if (!renderer) return;
     renderer.setColor({ r: 0.5, g: 0.4, b: 0.8, a: 1.0 });
     renderer.resize(props.width, props.height);
-    renderer.render(props.transform, props.cameraPosition, props.zoom, props.pixelGrid);
+    renderer.render(props.transform, props.cameraPosition, props.zoom);
+  },
+);
+
+watch(
+  () => props.pixelUpdateRequest,
+  () => {
+    if (!renderer) return;
+    renderer.updatePixels(props.pixelGrid);
   },
 );
 </script>

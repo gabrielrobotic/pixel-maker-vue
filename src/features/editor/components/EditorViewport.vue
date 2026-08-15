@@ -16,6 +16,7 @@
       :zoom
       :pixel-grid="pixelGrid"
       :render-request="renderRequest"
+      :pixel-update-request="pixelUpdateRequest"
     />
   </div>
 </template>
@@ -49,6 +50,8 @@ const pixelGrid = new PixelGrid();
 const pencilTool = new PencilTool(pixelGrid);
 
 let isDrawing = false;
+
+const pixelUpdateRequest = ref(0);
 
 function syncCamera(): void {
   transform.value = camera.getTransform();
@@ -137,8 +140,10 @@ function drawPixelAt(event: PointerEvent) {
 
   const world = camera.screenToWorld(screen.x, screen.y);
   const pixel = floor(world);
+
   pencilTool.draw(new Pixel(pixel.x, pixel.y));
 
+  pixelUpdateRequest.value++;
   renderRequest.value++;
 }
 

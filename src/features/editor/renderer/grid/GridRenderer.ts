@@ -3,6 +3,7 @@ import gridFragShaderSource from "./shaders/grid.frag?raw";
 
 import { ShaderProgram } from "../ShaderProgram";
 import type { Color } from "../types/Color";
+import type { Vec2 } from "@/shared/math/Vec2";
 
 export class GridRenderer {
   readonly #gl: WebGL2RenderingContext;
@@ -46,7 +47,7 @@ export class GridRenderer {
   }
 
   render(
-    cameraPosition: { x: number; y: number },
+    cameraPosition: Vec2,
     zoom: number,
     viewportSize: { width: number; height: number },
   ): void {
