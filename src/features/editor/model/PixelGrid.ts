@@ -1,7 +1,14 @@
+import { EventEmitter } from "@/shared/events/EventEmitter";
 import type { Pixel } from "./Pixel";
 
-export class PixelGrid implements Iterable<Pixel> {
+export class PixelGrid {
   readonly #pixels: Map<string, Pixel> = new Map<string, Pixel>();
+
+  readonly #change = new EventEmitter<void>();
+
+  onChange(listener: () => void): () => void {
+    return this.#change.on(listener);
+  }
 
   #key(x: number, y: number): string {
     return `${x}:${y}`;
@@ -12,7 +19,14 @@ export class PixelGrid implements Iterable<Pixel> {
   }
 
   set(pixel: Pixel): void {
-    this.#pixels.set(this.#key(pixel.x, pixel.y), pixel);
+    const key = this.#key(pixel.x, pixel.y);
+    const previous = this.#pixels.get(key);
+
+    this.#pixels.set(key, pixel);
+
+    if (previous !== pixel) {
+      this.#change.emit();
+    }
   }
 
   get(x: number, y: number): Pixel | null {
@@ -20,18 +34,28 @@ export class PixelGrid implements Iterable<Pixel> {
   }
 
   delete(x: number, y: number): boolean {
-    return this.#pixels.delete(this.#key(x, y));
+    const deleted = this.#pixels.delete(this.#key(x, y));
+
+    if (deleted) {
+      this.#change.emit();
+    }
+    return deleted;
   }
 
   clear(): void {
+    if (this.#pixels.size === 0) {
+      return;
+    }
+
     this.#pixels.clear();
+    this.#change.emit();
   }
 
   has(x: number, y: number): boolean {
     return this.#pixels.has(this.#key(x, y));
   }
 
-  [Symbol.iterator](): Iterator<Pixel> {
+  values(): IterableIterator<Pixel> {
     return this.#pixels.values();
   }
 }

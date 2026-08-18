@@ -58,7 +58,7 @@ export class PixelGridRenderer {
 
     let index = 0;
 
-    for (const pixel of pixelGrid) {
+    for (const pixel of pixelGrid.values()) {
       positions[index++] = pixel.x;
       positions[index++] = pixel.y;
     }

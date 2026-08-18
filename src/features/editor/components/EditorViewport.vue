@@ -9,14 +9,13 @@
     @wheel.prevent="handleWheel"
   >
     <EditorCanvas
+      ref="editorCanvas"
       :width="size.width"
       :height="size.height"
       :transform
       :camera-position="cameraPosition"
       :zoom
       :pixel-grid="pixelGrid"
-      :render-request="renderRequest"
-      :pixel-update-request="pixelUpdateRequest"
     />
   </div>
 </template>
@@ -31,6 +30,7 @@ import { add, floor, sub, type Vec2 } from "@/shared/math/Vec2";
 import { PencilTool } from "../tools/PencilTool";
 
 const viewport = ref<HTMLDivElement | null>(null);
+const editorCanvas = ref<InstanceType<typeof EditorCanvas> | null>(null);
 
 let resizeObserver: ResizeObserver;
 
@@ -44,14 +44,36 @@ const zoom = ref(camera.zoom);
 let isPanning = false;
 let lastPointer: Vec2 = { x: 0, y: 0 };
 
-const renderRequest = ref(0);
-
 const pixelGrid = new PixelGrid();
 const pencilTool = new PencilTool(pixelGrid);
 
 let isDrawing = false;
 
-const pixelUpdateRequest = ref(0);
+let stopCameraListener: (() => void) | null = null;
+let stopPixelGridListener: (() => void) | null = null;
+
+let renderFrame: number | null = null;
+let pixelUpdateFrame: number | null = null;
+
+function requestRender(): void {
+  if (renderFrame !== null) return;
+
+  renderFrame = requestAnimationFrame(() => {
+    renderFrame = null;
+
+    editorCanvas.value?.render();
+  });
+}
+
+function requestPixelUpdate(): void {
+  if (pixelUpdateFrame !== null) return;
+
+  pixelUpdateFrame = requestAnimationFrame(() => {
+    pixelUpdateFrame = null;
+
+    editorCanvas.value?.updatePixels();
+  });
+}
 
 function syncCamera(): void {
   transform.value = camera.getTransform();
@@ -101,9 +123,6 @@ function handlePointerMove(event: PointerEvent) {
     camera.moveByScreen(delta);
 
     lastPointer = screen;
-
-    transform.value = camera.getTransform();
-    cameraPosition.value = camera.position;
   }
 }
 
@@ -142,15 +161,22 @@ function drawPixelAt(event: PointerEvent) {
   const pixel = floor(world);
 
   pencilTool.draw(new Pixel(pixel.x, pixel.y));
-
-  pixelUpdateRequest.value++;
-  renderRequest.value++;
 }
 
 onMounted(() => {
   if (!viewport.value) return;
 
   camera.setZoom(18.15);
+
+  stopCameraListener = camera.onChange(() => {
+    requestRender();
+    syncCamera();
+  });
+
+  stopPixelGridListener = pixelGrid.onChange(() => {
+    requestPixelUpdate();
+    requestRender();
+  });
 
   resizeObserver = new ResizeObserver(([entry]: ResizeObserverEntry[]) => {
     if (!entry) return;
@@ -166,6 +192,17 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (renderFrame !== null) {
+    cancelAnimationFrame(renderFrame);
+  }
+
+  if (pixelUpdateFrame !== null) {
+    cancelAnimationFrame(pixelUpdateFrame);
+  }
+
+  stopCameraListener?.();
+  stopPixelGridListener?.();
+
   resizeObserver.disconnect();
 });
 </script>
