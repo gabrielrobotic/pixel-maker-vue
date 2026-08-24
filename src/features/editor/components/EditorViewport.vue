@@ -53,7 +53,8 @@ let stopCameraListener: (() => void) | null = null;
 let stopPixelGridListener: (() => void) | null = null;
 
 let renderFrame: number | null = null;
-let pixelUpdateFrame: number | null = null;
+
+let pixelUpdatePending = false;
 
 function requestRender(): void {
   if (renderFrame !== null) return;
@@ -61,18 +62,18 @@ function requestRender(): void {
   renderFrame = requestAnimationFrame(() => {
     renderFrame = null;
 
+    if (pixelUpdatePending) {
+      editorCanvas.value?.updatePixels();
+      pixelUpdatePending = false;
+    }
+
     editorCanvas.value?.render();
   });
 }
 
 function requestPixelUpdate(): void {
-  if (pixelUpdateFrame !== null) return;
-
-  pixelUpdateFrame = requestAnimationFrame(() => {
-    pixelUpdateFrame = null;
-
-    editorCanvas.value?.updatePixels();
-  });
+  pixelUpdatePending = true;
+  requestRender();
 }
 
 function syncCamera(): void {
@@ -169,13 +170,12 @@ onMounted(() => {
   camera.setZoom(18.15);
 
   stopCameraListener = camera.onChange(() => {
-    requestRender();
     syncCamera();
+    requestRender();
   });
 
   stopPixelGridListener = pixelGrid.onChange(() => {
     requestPixelUpdate();
-    requestRender();
   });
 
   resizeObserver = new ResizeObserver(([entry]: ResizeObserverEntry[]) => {
@@ -194,10 +194,6 @@ onMounted(() => {
 onUnmounted(() => {
   if (renderFrame !== null) {
     cancelAnimationFrame(renderFrame);
-  }
-
-  if (pixelUpdateFrame !== null) {
-    cancelAnimationFrame(pixelUpdateFrame);
   }
 
   stopCameraListener?.();
