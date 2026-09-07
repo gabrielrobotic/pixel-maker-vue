@@ -1,9 +1,9 @@
+<script setup lang="ts">
+import EditorCanvas from '../components/EditorCanvas.vue'
+</script>
+
 <template>
-  <main class="h-screen w-screen">
-    <EditorViewport />
+  <main class="w-screen h-screen">
+    <EditorCanvas />
   </main>
 </template>
-
-<script setup lang="ts">
-import EditorViewport from "../components/EditorViewport.vue";
-</script>
