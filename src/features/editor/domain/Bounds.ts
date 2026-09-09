@@ -1,6 +1,6 @@
+import type { Vec2 } from '@/shared/math/Vec2'
+
 export interface Bounds {
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
+  min: Vec2
+  max: Vec2
 }

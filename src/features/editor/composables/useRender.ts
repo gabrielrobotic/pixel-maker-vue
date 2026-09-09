@@ -34,7 +34,13 @@ export function useRender(canvasRef: Ref<HTMLCanvasElement | null>) {
     renderer.dispose()
   })
 
-  watch([transform, pixels], () => {
+  watch([transform], () => {
+    render()
+  })
+
+  watch([pixels.value], () => {
+    if (!renderer) return
+    renderer.updatePixels()
     render()
   })
 }

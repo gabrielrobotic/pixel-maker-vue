@@ -1,12 +1,14 @@
 import { storeToRefs } from 'pinia'
 import type { Color } from '../domain/Color'
-import type { Pixel } from '../domain/Pixel'
 import { GridRenderer } from './grid/GridRenderer'
 import { PixelsRenderer } from './pixels/PixelsRenderer'
 import { useCameraStore } from '../stores/Camera'
+import { usePixelsStore } from '../stores/Pixels'
 
 const cameraStore = useCameraStore()
 const { position, zoom, transform, viewport } = storeToRefs(cameraStore)
+
+const { pixels } = storeToRefs(usePixelsStore())
 
 export class WebGL2Renderer {
   readonly #canvas: HTMLCanvasElement
@@ -43,8 +45,8 @@ export class WebGL2Renderer {
     this.#gl.viewport(0, 0, pixelWidth, pixelHeight)
   }
 
-  updatePixels(pixels: Map<string, Pixel>): void {
-    this.#pixelsRenderer.updatePixels(pixels)
+  updatePixels(): void {
+    this.#pixelsRenderer.updatePixels(pixels.value)
   }
 
   render(): void {

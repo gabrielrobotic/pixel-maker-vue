@@ -1,15 +1,22 @@
-import { add, sub, type Vec2 } from '@/shared/math/Vec2'
+import { add, floor, sub, type Vec2 } from '@/shared/math/Vec2'
 import { getScreenMousePosition } from '../utils/Mouse'
 import { useCameraStore } from '../stores/Camera'
 import { type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMouseStore } from '../stores/Mouse'
+import { useEditorStore } from '../stores/Editor'
+import { usePixelsStore } from '../stores/Pixels'
 
 const cameraStore = useCameraStore()
 const { position, zoom } = storeToRefs(cameraStore)
 
 const mouseStore = useMouseStore()
 const { isPanning, lastPointer, isDrawing } = storeToRefs(mouseStore)
+
+const editorStore = useEditorStore()
+const { primaryColor } = editorStore
+
+const pixelStore = usePixelsStore()
 
 export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
   function onPointerDown(event: PointerEvent) {
@@ -84,8 +91,14 @@ export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
 
   function startDraw(event: PointerEvent) {
     if (event.button !== 0) return
+
+    const screen = getScreenMousePosition(event, viewportRef.value)
+    if (!screen) return
+
+    const position = floor(cameraStore.screenToWorld(screen))
+    pixelStore.drawPixel(position, primaryColor)
+
     isDrawing.value = true
-    console.log('start draw!')
   }
   function drawing() {
     if (isDrawing.value) {

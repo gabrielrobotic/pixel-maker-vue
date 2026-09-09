@@ -34,8 +34,8 @@ export const useCameraStore = defineStore('camera', () => {
     const sx = (2 * _zoom.value) / _viewport.value.width
     const sy = (2 * _zoom.value) / _viewport.value.height
 
-    const tx = _position.value.x * sx
-    const ty = _position.value.y * sy
+    const tx = -_position.value.x * sx
+    const ty = -_position.value.y * sy
 
     return new Float32Array([sx, 0, 0, 0, sy, 0, tx, ty, 1])
   })
