@@ -17,6 +17,13 @@ export function sub(a: Vec2, b: Vec2): Vec2 {
   }
 }
 
+export function scale(v: Vec2, scalar: number): Vec2 {
+  return {
+    x: v.x * scalar,
+    y: v.y * scalar,
+  }
+}
+
 export function floor(v: Vec2): Vec2 {
   return {
     x: Math.floor(v.x),

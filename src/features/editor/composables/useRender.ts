@@ -6,7 +6,8 @@ import { usePixelsStore } from '../stores/Pixels'
 
 const { transform } = storeToRefs(useCameraStore())
 
-const { pixels } = storeToRefs(usePixelsStore())
+const pixelsStore = usePixelsStore()
+const { pixels } = storeToRefs(pixelsStore)
 
 export function useRender(canvasRef: Ref<HTMLCanvasElement | null>) {
   let renderer: WebGL2Renderer | null = null
@@ -40,7 +41,17 @@ export function useRender(canvasRef: Ref<HTMLCanvasElement | null>) {
 
   watch([pixels.value], () => {
     if (!renderer) return
-    renderer.updatePixels()
-    render()
+
+    const committedChunks = pixelsStore.commitDraw()
+
+    for (const key of committedChunks) {
+      const chunk = pixelsStore.chunks.get(key)
+
+      if (!chunk) continue
+
+      renderer.updateChunk(chunk, pixelsStore.pixels)
+    }
+
+    renderer.render()
   })
 }

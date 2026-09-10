@@ -4,6 +4,8 @@ import { GridRenderer } from './grid/GridRenderer'
 import { PixelsRenderer } from './pixels/PixelsRenderer'
 import { useCameraStore } from '../stores/Camera'
 import { usePixelsStore } from '../stores/Pixels'
+import type { Chunk } from '../domain/Chunk'
+import type { Pixel } from '../domain/Pixel'
 
 const cameraStore = useCameraStore()
 const { position, zoom, transform, viewport } = storeToRefs(cameraStore)
@@ -45,8 +47,8 @@ export class WebGL2Renderer {
     this.#gl.viewport(0, 0, pixelWidth, pixelHeight)
   }
 
-  updatePixels(): void {
-    this.#pixelsRenderer.updatePixels(pixels.value)
+  updateChunk(chunk: Chunk, pixels: Map<string, Pixel>): void {
+    this.#pixelsRenderer.updateChunk(chunk, pixels)
   }
 
   render(): void {
