@@ -7,7 +7,7 @@ import { usePixelsStore } from '../stores/Pixels'
 const { transform } = storeToRefs(useCameraStore())
 
 const pixelsStore = usePixelsStore()
-const { pixels } = storeToRefs(pixelsStore)
+const { dirtyChunks } = storeToRefs(pixelsStore)
 
 export function useRender(canvasRef: Ref<HTMLCanvasElement | null>) {
   let renderer: WebGL2Renderer | null = null
@@ -39,19 +39,21 @@ export function useRender(canvasRef: Ref<HTMLCanvasElement | null>) {
     render()
   })
 
-  watch([pixels.value], () => {
-    if (!renderer) return
+  watch(
+    () => dirtyChunks.value.size,
+    () => {
+      if (!renderer) return
 
-    const committedChunks = pixelsStore.commitDraw()
+      const committedChunks = pixelsStore.commitDraw()
 
-    for (const key of committedChunks) {
-      const chunk = pixelsStore.chunks.get(key)
+      for (const key of committedChunks) {
+        const chunk = pixelsStore.chunks.get(key)
+        if (!chunk) continue
 
-      if (!chunk) continue
+        renderer.updateChunk(chunk, pixelsStore.pixels)
+      }
 
-      renderer.updateChunk(chunk, pixelsStore.pixels)
-    }
-
-    renderer.render()
-  })
+      renderer.render()
+    },
+  )
 }

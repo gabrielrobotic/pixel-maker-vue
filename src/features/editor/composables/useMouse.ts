@@ -23,6 +23,8 @@ const { isDrawing, lastPointerDraw, lastMousePosition } = storeToRefs(drawStore)
 
 export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
   let drawingFrame: number | null = null
+  const drawingQueue: Vec2[] = []
+  let lastRenderedDraw: Vec2 | null = null
 
   function onPointerDown(event: PointerEvent) {
     if (!viewportRef.value) return
@@ -32,8 +34,12 @@ export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
     startDraw(event)
   }
   function onPointerMove(event: PointerEvent) {
-    drawing(event)
+    const events = event.getCoalescedEvents()
+    events.forEach((event) => drawing(event))
+
     panning(event)
+
+    requestDrawing()
   }
   function onPointerUp(event: PointerEvent) {
     if (!viewportRef.value) return
@@ -103,8 +109,7 @@ export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
 
     isDrawing.value = true
     lastPointerDraw.value = position
-
-    requestDrawing()
+    lastRenderedDraw = position
   }
   function drawing(event: PointerEvent) {
     if (!isDrawing.value || !viewportRef.value) return
@@ -114,47 +119,85 @@ export function useMouse(viewportRef: Ref<HTMLDivElement | null>) {
 
     const position = floor(cameraStore.screenToWorld(screen))
 
-    lastMousePosition.value = position
-
-    requestDrawing()
+    if (
+      lastPointerDraw.value &&
+      (position.x !== lastPointerDraw.value.x || position.y !== lastPointerDraw.value.y)
+    ) {
+      drawingQueue.push(position)
+      lastPointerDraw.value = position
+    }
   }
   function stopDraw() {
     isDrawing.value = false
     lastPointerDraw.value = null
     lastMousePosition.value = null
-  }
 
-  function drawLine(from: Vec2, to: Vec2) {
-    const delta = sub(to, from)
-    const steps = Math.max(Math.abs(delta.x), Math.abs(delta.y))
+    drawingQueue.length = 0
+    lastRenderedDraw = null
 
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps
-      const position = floor(add(from, scale(delta, t)))
-
-      pixelStore.drawPixel(position, primaryColor)
+    if (drawingFrame !== null) {
+      cancelAnimationFrame(drawingFrame)
+      drawingFrame = null
     }
   }
+
   function requestDrawing() {
     if (drawingFrame !== null) return
 
-    drawingFrame = requestAnimationFrame(() => {
-      drawingFrame = null
+    drawingFrame = requestAnimationFrame(processDrawing)
+  }
 
-      if (!isDrawing.value || !lastMousePosition.value) return
+  function processDrawing() {
+    drawingFrame = null
 
-      if (
-        !lastPointerDraw.value ||
-        lastMousePosition.value.x !== lastPointerDraw.value.x ||
-        lastMousePosition.value.y !== lastPointerDraw.value.y
-      ) {
-        drawLine(lastPointerDraw.value ?? lastMousePosition.value, lastMousePosition.value)
+    if (!isDrawing.value || drawingQueue.length === 0) return
 
-        lastPointerDraw.value = lastMousePosition.value
+    while (drawingQueue.length > 0) {
+      const to = drawingQueue.shift()!
+
+      if (lastRenderedDraw) {
+        drawLine(lastRenderedDraw, to)
       }
 
+      lastRenderedDraw = to
+    }
+
+    if (drawingQueue.length > 0) {
       requestDrawing()
-    })
+    }
+  }
+
+  function drawLine(from: Vec2, to: Vec2) {
+    let x0 = from.x
+    let y0 = from.y
+    const x1 = to.x
+    const y1 = to.y
+
+    const dx = Math.abs(x1 - x0)
+    const dy = Math.abs(y1 - y0)
+
+    const sx = x0 < x1 ? 1 : -1
+    const sy = y0 < y1 ? 1 : -1
+
+    let error = dx - dy
+
+    while (true) {
+      pixelStore.drawPixel({ x: x0, y: y0 }, primaryColor)
+      // console.log(x0, y0)
+      if (x0 === x1 && y0 === y1) break
+
+      const error2 = 2 * error
+
+      if (error2 > -dy) {
+        error -= dy
+        x0 += sx
+      }
+
+      if (error2 < dx) {
+        error += dx
+        y0 += sy
+      }
+    }
   }
 
   return {
