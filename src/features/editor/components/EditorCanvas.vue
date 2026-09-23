@@ -1,27 +1,23 @@
+<script setup lang="ts">
+import { useEditorCanvas } from '../composables/useEditorCanvas'
+import { useEditorPointer } from '../composables/useEditorPointer'
+import { useEditorWheel } from '../composables/useEditorWheel'
+
+const { canvas, camera, requestRender } = useEditorCanvas()
+const { onPointerDown, onPointerMove, onPointerUp } = useEditorPointer(camera, requestRender)
+const { onWheel } = useEditorWheel(camera, requestRender)
+</script>
+
 <template>
-  <div
-    ref="viewportRef"
+  <canvas
+    ref="canvas"
     class="w-full h-full"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
-    @pointerleave="onPointerUp"
-    @wheel.prevent="onWheel"
-  >
-    <canvas ref="canvasRef" class="w-full h-full"></canvas>
-  </div>
+    @pointercancel="onPointerUp"
+    @wheel="onWheel"
+  />
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useMouse } from '../composables/useMouse'
-import { useRender } from '../composables/useRender'
-import { useResize } from '../composables/useResize'
-
-const viewportRef = ref<HTMLDivElement | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-
-useResize(viewportRef)
-useRender(canvasRef)
-const { onPointerDown, onPointerMove, onPointerUp, onWheel } = useMouse(viewportRef)
-</script>
+<style lang="scss" scoped></style>
